@@ -24,6 +24,9 @@
         android:theme="@style/Theme.Komertzial_aplikazioa"
         tools:targetApi="31">
         <activity
+            android:name=".EditarPedidoActivity"
+            android:exported="false" />
+        <activity
             android:name=".PedidoActivity"
             android:exported="false" />
         <activity

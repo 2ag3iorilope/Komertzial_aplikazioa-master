@@ -100,7 +100,8 @@ public class Sarrera extends AppCompatActivity {
 
                     case "Eskaerak Aldatu":
 
-
+                        Intent EditatuEskaerak = new Intent(Sarrera.this,EditarPedidoActivity.class);
+                        startActivity(EditatuEskaerak);
                         break;
                 }
 

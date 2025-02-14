@@ -474,6 +474,56 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
         return maxId;
     }
+    public List<EskaeraXehetasuna> obtenerDetallesPedidoSeguro(SQLiteDatabase db, int codigoPedido) {
+        List<EskaeraXehetasuna> detalles = new ArrayList<>();
+
+        if (db == null) {
+            Log.e("EditarPedidoActivity", "Base de datos no disponible.");
+            return detalles;  // Si la base de datos no está disponible, retorna una lista vacía.
+        }
+
+        String query = "SELECT * FROM Eskaera_Xehetasuna WHERE codigo_pedido = ?";
+        Cursor cursor = null;
+
+        try {
+            // Ejecutar la consulta y obtener el cursor
+            cursor = db.rawQuery(query, new String[]{String.valueOf(codigoPedido)});
+
+            if (cursor != null && cursor.moveToFirst()) {
+                do {
+                    // Verificar si las columnas existen y están disponibles
+                    int columnaCodigoProducto = cursor.getColumnIndex("codigo_producto");
+                    int columnaPrecioUnidad = cursor.getColumnIndex("precio_x_unidad");
+                    int columnaTotal = cursor.getColumnIndex("total");
+                    int columnaCantidad = cursor.getColumnIndex("cantidad");
+
+                    // Verificar si todas las columnas son válidas
+                    if (columnaCodigoProducto != -1 && columnaPrecioUnidad != -1 && columnaTotal != -1 && columnaCantidad != -1) {
+                        int codigoProducto = cursor.getInt(columnaCodigoProducto);
+                        double precioUnitario = cursor.getDouble(columnaPrecioUnidad);
+                        double total = cursor.getDouble(columnaTotal);
+                        int cantidad = cursor.getInt(columnaCantidad);
+
+                        // Crear el objeto de detalle
+                        EskaeraXehetasuna detalle = new EskaeraXehetasuna(codigoPedido, codigoProducto, precioUnitario, total, cantidad);
+                        detalles.add(detalle);
+                    } else {
+                        Log.e("EditarPedidoActivity", "Faltan columnas en la consulta para el pedido: " + codigoPedido);
+                    }
+                } while (cursor.moveToNext());
+            } else {
+                Log.e("EditarPedidoActivity", "No se encontraron detalles para el pedido con código: " + codigoPedido);
+            }
+        } catch (Exception e) {
+            Log.e("EditarPedidoActivity", "Error al obtener los detalles del pedido: " + e.getMessage());
+        } finally {
+            if (cursor != null) {
+                cursor.close();  // Asegúrate de cerrar el cursor
+            }
+        }
+
+        return detalles;  // Retornar la lista de detalles (vacía si no se encontraron registros)
+    }
 
     // Bisita bat gordetzen du
     public long BisitaGorde(String titulo, String detalles, String fecha, int idUsuario) {
