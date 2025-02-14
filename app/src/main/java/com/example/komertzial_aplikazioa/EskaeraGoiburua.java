@@ -8,8 +8,8 @@ public class EskaeraGoiburua {
     private int idPartner;
     private String estadoPedido;
 
-    public EskaeraGoiburua(int codigoPedido, String direccionEnvio, String fechaPedido, int idComercial, int idPartner, String estadoPedido) {
-        this.codigoPedido = codigoPedido;
+    public EskaeraGoiburua(String direccionEnvio, String fechaPedido, int idComercial, int idPartner, String estadoPedido) {
+
         this.direccionEnvio = direccionEnvio;
         this.fechaPedido = fechaPedido;
         this.idComercial = idComercial;
@@ -17,9 +17,12 @@ public class EskaeraGoiburua {
         this.estadoPedido = estadoPedido;
     }
 
+    public EskaeraGoiburua() {
+
+    }
+
     // Getters y Setters
-    public int getCodigoPedido() { return codigoPedido; }
-    public void setCodigoPedido(int codigoPedido) { this.codigoPedido = codigoPedido; }
+
 
     public String getDireccionEnvio() { return direccionEnvio; }
     public void setDireccionEnvio(String direccionEnvio) { this.direccionEnvio = direccionEnvio; }

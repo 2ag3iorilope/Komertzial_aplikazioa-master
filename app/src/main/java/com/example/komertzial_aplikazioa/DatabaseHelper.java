@@ -10,8 +10,17 @@ import android.database.Cursor;
 import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.os.Environment;
 import android.util.Log;
 import android.widget.Toast;
+import android.util.Xml;
+import org.xmlpull.v1.XmlSerializer;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.util.List;
+
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -296,7 +305,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
             // Insertar en la tabla EskaeraGoiburua (cabecera del pedido)
             ContentValues values = new ContentValues();
-            values.put("codigo_pedido", eskaeraGoiburua.getCodigoPedido());
             values.put("direccion_envio", eskaeraGoiburua.getDireccionEnvio());
             values.put("fecha", eskaeraGoiburua.getFechaPedido());
             values.put("id_comercial", eskaeraGoiburua.getIdComercial());
@@ -331,6 +339,10 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                     return; // Detener el proceso si no se pudo guardar un detalle
                 }
             }
+            // Llamar al método para guardar el pedido en XML
+            guardarPedidoEnXml(context, idGoiburua, eskaeraGoiburua, detallesPedido);
+
+            // Mensaje de éxito
 
             // Mensaje de éxito
             Toast.makeText(context, "Pedido guardado exitosamente", Toast.LENGTH_SHORT).show();
@@ -343,6 +355,124 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 db.close();  // Asegurarse de cerrar la base de datos
             }
         }
+    }
+
+
+    private void guardarPedidoEnXml(Context context, long idGoiburua, EskaeraGoiburua eskaeraGoiburua, List<EskaeraXehetasuna> detallesPedido) {
+        FileOutputStream fos = null;
+        File directory = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS), "XML-ak/Bidaltzeko");
+
+        try {
+            // Crear el directorio si no existe
+            if (!directory.exists()) {
+                boolean created = directory.mkdirs();  // Crear directorios si no existen
+                if (!created) {
+                    Toast.makeText(context, "Error al crear directorios", Toast.LENGTH_LONG).show();
+                    return;
+                }
+            }
+
+            // Crear archivo XML dentro del directorio
+            File file = new File(directory, "pedido_" + idGoiburua + ".xml");
+            fos = new FileOutputStream(file);
+
+            XmlSerializer serializer = Xml.newSerializer();
+            serializer.setOutput(fos, "UTF-8");
+
+            // Iniciar el documento XML
+            serializer.startDocument("UTF-8", true);
+            serializer.startTag("", "pedido");
+
+            // Guardar la cabecera del pedido en XML
+            serializer.startTag("", "cabecera");
+            serializer.startTag("", "codigo_pedido");
+            serializer.text(String.valueOf(idGoiburua));  // Usar el ID generado para el pedido
+            serializer.endTag("", "codigo_pedido");
+            serializer.startTag("", "direccion_envio");
+            serializer.text(eskaeraGoiburua.getDireccionEnvio());
+            serializer.endTag("", "direccion_envio");
+            serializer.startTag("", "fecha");
+            serializer.text(eskaeraGoiburua.getFechaPedido());
+            serializer.endTag("", "fecha");
+            serializer.startTag("", "id_comercial");
+            serializer.text(String.valueOf(eskaeraGoiburua.getIdComercial()));
+            serializer.endTag("", "id_comercial");
+            serializer.startTag("", "id_partner");
+            serializer.text(String.valueOf(eskaeraGoiburua.getIdPartner()));
+            serializer.endTag("", "id_partner");
+            serializer.startTag("", "estado");
+            serializer.text(eskaeraGoiburua.getEstadoPedido());
+            serializer.endTag("", "estado");
+            serializer.endTag("", "cabecera");
+
+            // Guardar los detalles del pedido en XML
+            serializer.startTag("", "detalles");
+            for (EskaeraXehetasuna detalle : detallesPedido) {
+                serializer.startTag("", "detalle");
+                serializer.startTag("", "codigo_producto");
+                serializer.text(String.valueOf(detalle.getCodigoProducto()));
+                serializer.endTag("", "codigo_producto");
+                serializer.startTag("", "precio_x_unidad");
+                serializer.text(String.valueOf(detalle.getPrecioUnitario()));
+                serializer.endTag("", "precio_x_unidad");
+                serializer.startTag("", "total");
+                serializer.text(String.valueOf(detalle.getTotal()));
+                serializer.endTag("", "total");
+                serializer.startTag("", "cantidad");
+                serializer.text(String.valueOf(detalle.getCantidad()));
+                serializer.endTag("", "cantidad");
+                serializer.endTag("", "detalle");
+            }
+            serializer.endTag("", "detalles");
+
+            // Cerrar el XML
+            serializer.endTag("", "pedido");
+            serializer.endDocument();
+
+            Toast.makeText(context, "Archivo XML guardado en: " + file.getAbsolutePath(), Toast.LENGTH_SHORT).show();
+
+        } catch (Exception e) {
+            // Capturar cualquier excepción y mostrar el error
+            Toast.makeText(context, "Error al guardar el pedido en XML: " + e.getMessage(), Toast.LENGTH_LONG).show();
+        } finally {
+            if (fos != null) {
+                try {
+                    fos.close();  // Asegurarse de cerrar el archivo
+                } catch (IOException e) {
+                    Toast.makeText(context, "Error al cerrar el archivo XML: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                }
+            }
+        }
+    }
+    public int obtenerMaxIdEskaeraGoiburua() {
+        SQLiteDatabase db = null;
+        int maxId = -1;  // Inicializamos en -1 por defecto en caso de no encontrar un ID
+
+        try {
+            db = this.getReadableDatabase();
+
+            // Consulta SQL para obtener el ID máximo
+            String query = "SELECT MAX(codigo_pedido) FROM Eskaera_Goiburua";
+            Cursor cursor = db.rawQuery(query, null);
+
+            if (cursor != null && cursor.moveToFirst()) {
+                maxId = cursor.getInt(0);  // El primer valor en la columna es el ID máximo
+            }
+
+            if (cursor != null) {
+                cursor.close();  // Cerramos el cursor
+            }
+
+        } catch (Exception e) {
+            // Capturar cualquier excepción y mostrar el error
+            Log.e("ErrorDB", "Error al obtener el ID máximo: " + e.getMessage());
+        } finally {
+            if (db != null && db.isOpen()) {
+                db.close();  // Asegurarse de cerrar la base de datos
+            }
+        }
+
+        return maxId;
     }
 
     // Bisita bat gordetzen du
@@ -473,6 +603,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         db.close();
         return partnerList;
     }
+
 
     //Partner berria gehitzen du
     public void PartnerraGehitu(String nombre, String direccion, String telefono, int estado, int idComercial) {

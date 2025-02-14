@@ -19,6 +19,8 @@ public class PedidoActivity extends AppCompatActivity {
     private List<Producto> productosSeleccionados;
     private List<EskaeraXehetasuna> detallesPedido; // Lista para almacenar los detalles del pedido
     private Button btnConfirmarPedido;
+    EskaeraGoiburua eskaeraGoiburua = new EskaeraGoiburua();
+    private DatabaseHelper dbHelper;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -27,6 +29,7 @@ public class PedidoActivity extends AppCompatActivity {
 
         recyclerView = findViewById(R.id.recyclerProductos);
         btnConfirmarPedido = findViewById(R.id.btnConfirmarPedido);
+        dbHelper = new DatabaseHelper(this);
 
         listaProductos = new ArrayList<>();
         productosSeleccionados = new ArrayList<>();
@@ -61,13 +64,14 @@ public class PedidoActivity extends AppCompatActivity {
             // Obtener la cantidad seleccionada (esto debería provenir de la interfaz de usuario)
             int cantidad = 1; // Cambia esto según la cantidad real ingresada en el EditText
             double total = producto.getPrezio() * cantidad;
-            EskaeraXehetasuna detalle = new EskaeraXehetasuna(1001, producto.getId(), producto.getPrezio(), total, cantidad);
+            EskaeraXehetasuna detalle = new EskaeraXehetasuna(dbHelper.obtenerMaxIdEskaeraGoiburua(), producto.getId(), producto.getPrezio(), total, cantidad);
             detallesPedido.add(detalle);
         }
 
         // Crear la cabecera del pedido
-        EskaeraGoiburua eskaeraGoiburua = new EskaeraGoiburua(1001, "Direccion de envio", "2025-02-14", 1, 1, "Confirmado");
+        EskaeraGoiburua eskaeraGoiburua = new EskaeraGoiburua("Direccion de envio", "2025-02-14", 1, 1, "Confirmado");
 
+        // Guardar el pedido en la base de datos
         // Guardar el pedido en la base de datos
         DatabaseHelper databaseHelper = new DatabaseHelper(this);
         databaseHelper.guardarPedido(getApplicationContext(),eskaeraGoiburua, detallesPedido);
