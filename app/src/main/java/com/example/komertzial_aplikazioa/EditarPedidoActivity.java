@@ -41,20 +41,20 @@ public class EditarPedidoActivity extends AppCompatActivity {
 
         db = new DatabaseHelper(context).getWritableDatabase();
 
-        // Configurar RecyclerView
+
         recyclerDetalles.setLayoutManager(new LinearLayoutManager(this));
         adapter = new ProductoDetalleAdapter(detallesProducto, this);
         recyclerDetalles.setAdapter(adapter);
 
-        // Cargar los pedidos en el Spinner
+
         loadPedidos();
 
         spinnerPedidos.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parentView, View selectedItemView, int position, long id) {
-                // Obtener el código del pedido seleccionado
+
                 int codigoPedidoSeleccionado = (int) parentView.getItemAtPosition(position);
-                // Cargar los detalles del producto para ese pedido
+
                 loadDetallesProducto(codigoPedidoSeleccionado);
             }
 
@@ -65,7 +65,7 @@ public class EditarPedidoActivity extends AppCompatActivity {
         btnGuardar.setOnClickListener(view -> guardarCambios());
     }
 
-    // Cargar los pedidos desde la base de datos en el Spinner
+
     private void loadPedidos() {
         List<Integer> pedidos = new ArrayList<>();
         String query = "SELECT codigo_pedido FROM Eskaera_Goiburua";
@@ -90,7 +90,7 @@ public class EditarPedidoActivity extends AppCompatActivity {
         spinnerPedidos.setAdapter(adapter);
     }
 
-    // Cargar los detalles del producto según el código del pedido seleccionado
+
     private void loadDetallesProducto(int codigoPedido) {
         detallesProducto.clear();  // Limpiar los detalles previos
         List<ProductoDetalle> detalles = obtenerDetallesDelPedido(db, codigoPedido);
@@ -102,16 +102,16 @@ public class EditarPedidoActivity extends AppCompatActivity {
         }
 
         detallesProducto.addAll(detalles);
-        adapter.notifyDataSetChanged();  // Notificar al adaptador que los datos han cambiado
+        adapter.notifyDataSetChanged();
     }
 
-    // Guardar cambios realizados en los detalles de los productos
+
     private void guardarCambios() {
         db.beginTransaction();
         try {
             for (ProductoDetalle detalle : detallesProducto) {
                 ContentValues values = new ContentValues();
-                values.put("cantidad", detalle.getCantidad());  // Actualizamos la cantidad
+                values.put("cantidad", detalle.getCantidad());
 
                 int rowsAffected = db.update("Eskaera_Xehetasuna", values,
                         "codigo_pedido = ? AND codigo_producto = ?",
@@ -126,27 +126,33 @@ public class EditarPedidoActivity extends AppCompatActivity {
         } catch (Exception e) {
             Log.e("EditarPedidoActivity", "Error al guardar los cambios", e);
         } finally {
-            db.endTransaction();  // Finalizar la transacción
+            db.endTransaction();
         }
     }
 
-    // Obtener los detalles del pedido desde la base de datos
-    private List<ProductoDetalle> obtenerDetallesDelPedido(SQLiteDatabase db, int codigoPedido) {
+
+    public List<ProductoDetalle> obtenerDetallesDelPedido(SQLiteDatabase db, int codigoPedido) {
         List<ProductoDetalle> detalles = new ArrayList<>();
-        String query = "SELECT * FROM Eskaera_Xehetasuna WHERE codigo_pedido = ?";
+        String query = "SELECT ex.codigo_producto, p.nombre, ex.precio_x_unidad, ex.cantidad " +
+                "FROM Eskaera_Xehetasuna ex " +
+                "JOIN Produktua p ON ex.codigo_producto = p.codigo " +
+                "WHERE ex.codigo_pedido = ?";
+
         Cursor cursor = null;
         try {
             cursor = db.rawQuery(query, new String[]{String.valueOf(codigoPedido)});
             if (cursor != null && cursor.moveToFirst()) {
                 do {
-                    // Verificar el índice de cada columna antes de acceder a ella
+
                     int codigoProductoIndex = cursor.getColumnIndex("codigo_producto");
+                    int nombreProductoIndex = cursor.getColumnIndex("nombre");
                     int precioUnitarioIndex = cursor.getColumnIndex("precio_x_unidad");
                     int cantidadIndex = cursor.getColumnIndex("cantidad");
 
-                    if (codigoProductoIndex != -1  && precioUnitarioIndex != -1 && cantidadIndex != -1) {
-                        int codigoProducto = cursor.getInt(codigoProductoIndex);
 
+                    if (codigoProductoIndex != -1 && nombreProductoIndex != -1 && precioUnitarioIndex != -1 && cantidadIndex != -1) {
+                        int codigoProducto = cursor.getInt(codigoProductoIndex);
+                        String nombreProducto = cursor.getString(nombreProductoIndex);
                         double precioUnitario = cursor.getDouble(precioUnitarioIndex);
                         int cantidad = cursor.getInt(cantidadIndex);
 
@@ -169,4 +175,6 @@ public class EditarPedidoActivity extends AppCompatActivity {
 
         return detalles;
     }
+
+
 }
