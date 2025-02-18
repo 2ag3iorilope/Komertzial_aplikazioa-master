@@ -58,24 +58,37 @@ public class PedidoActivity extends AppCompatActivity {
             return;
         }
 
-        // Aquí obtenemos los detalles del pedido desde el adaptador
-        List<EskaeraXehetasuna> detallesPedido = new ArrayList<>();
+        // Lista para los detalles confirmados del pedido
+        List<EskaeraXehetasuna> detallesPedidoConfirmados = new ArrayList<>();
         for (Producto producto : productosSeleccionados) {
-            // Obtener la cantidad seleccionada (esto debería provenir de la interfaz de usuario)
-            int cantidad = 1; // Cambia esto según la cantidad real ingresada en el EditText
+            int cantidad = 0;
+
+            // Buscar la cantidad en detallesPedido usando el id del producto
+            for (EskaeraXehetasuna detalle : detallesPedido) {
+                if (detalle.getCodigoProducto() == producto.getId()) {
+                    cantidad = detalle.getCantidad(); // Obtener la cantidad del detalle
+                    break;
+                }
+            }
+
+            // Validar que la cantidad sea mayor a cero
+            if (cantidad <= 0) {
+                Toast.makeText(this, "Cantidad inválida para el producto: " + producto.getIzena(), Toast.LENGTH_SHORT).show();
+                return;  // Si alguna cantidad es inválida, mostramos un error y salimos del método
+            }
+
+            // Calcular el total para el producto seleccionado
             double total = producto.getPrezio() * cantidad;
             EskaeraXehetasuna detalle = new EskaeraXehetasuna(dbHelper.obtenerMaxIdEskaeraGoiburua(), producto.getId(), producto.getPrezio(), total, cantidad);
-            detallesPedido.add(detalle);
+            detallesPedidoConfirmados.add(detalle);
         }
 
-        // Crear la cabecera del pedido
+        // Crear y guardar el pedido
         EskaeraGoiburua eskaeraGoiburua = new EskaeraGoiburua("Direccion de envio", "2025-02-14", 1, 1, "Confirmado");
-
-        // Guardar el pedido en la base de datos
-        // Guardar el pedido en la base de datos
         DatabaseHelper databaseHelper = new DatabaseHelper(this);
-        databaseHelper.guardarPedido(getApplicationContext(),eskaeraGoiburua, detallesPedido);
+        databaseHelper.guardarPedido(getApplicationContext(), eskaeraGoiburua, detallesPedidoConfirmados);
 
         Toast.makeText(this, "Pedido confirmado con " + productosSeleccionados.size() + " productos", Toast.LENGTH_LONG).show();
     }
+
 }
